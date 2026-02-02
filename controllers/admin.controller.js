@@ -44,8 +44,8 @@ const login = asyncWrapper(async (req, res, next) => {
 
   res.cookie("token", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production" ? true : false,
-    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+    secure: process.env.NODE_ENV === "prod" ? true : false,
+    sameSite: process.env.NODE_ENV === "prod" ? "None" : "Lax",
     maxAge: 30 * 60 * 1000,
   });
 
