@@ -6,77 +6,82 @@ const appError = require("../utils/appError");
 const asyncWrapper = require("../middlewares/asyncWrapper");
 
 const getProjects = asyncWrapper(async (req, res) => {
-  const q = req.query;
-  const page = parseInt(q.page) || 1;
-  const limit = parseInt(q.limit) || 10;
+  const { page = 1, limit = 10, filter } = req.query;
   const skip = (page - 1) * limit;
 
-  const projects = await Project.find({}, { __v: 0 })
+  const query = {};
+
+  if (filter && filter?.trim().toLowerCase() !== "all") {
+    query.filter = filter.trim().toLowerCase();
+  }
+  const projects = await Project.find(query, { __v: 0 })
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
+
+  const filters = await Project.distinct("filter");
   res.json({
     status: httpStatus.SUCCESS,
-    data: { projects },
+    data: { projects, filters },
   });
 });
 
 const createProject = asyncWrapper(async (req, res, next) => {
-  const { title, description, image, link, skils } = req.body;
+  const { title, description, image, link, skils, filter } = req.body;
 
-  if (!title || !description || !image || !link || !skils) {
-    return next(
-      appError.create("All fields are required", 400, httpStatus.FAIL),
-    );
-  }
-
-  const project = await new Project({
+  const project = new Project({
     title,
     description,
     image,
     link,
     skils,
+    filter: filter?.trim().toLowerCase(),
   });
   await project.save();
 
-  const projects = await Project.find({}, { __v: 0 });
-
   res.status(201).json({
     status: httpStatus.SUCCESS,
-    data: { projects },
+    data: { project },
   });
 });
-const editProject = asyncWrapper(async (req, res) => {
-  const project = await Project.findOneAndUpdate(
-    { _id: req.params.id },
-    req.body,
-  );
+const editProject = asyncWrapper(async (req, res, next) => {
+  const { title, description, image, link, skils, filter } = req.body;
+  const updateData = {
+    title,
+    description,
+    image,
+    link,
+    skils,
+  };
+
+  if (filter) {
+    updateData.filter = filter.trim().toLowerCase();
+  }
+
+  const project = await Project.findByIdAndUpdate(req.params.id, updateData, {
+    new: true,
+    runValidators: true,
+  });
 
   if (!project) {
     return next(appError.create("Project not found", 404, httpStatus.FAIL));
   }
 
-  await project.save();
-
-  const projects = await Project.find({}, { __v: 0 });
-
   res.json({
     status: httpStatus.SUCCESS,
-    data: { projects },
+    data: { project },
   });
 });
 
-const deleteProject = asyncWrapper(async (req, res) => {
+const deleteProject = asyncWrapper(async (req, res, next) => {
   const project = await Project.findOneAndDelete({ _id: req.params.id });
   if (!project) {
     return next(appError.create("Project not found", 404, httpStatus.FAIL));
   }
 
-  const projects = await Project.find({}, { __v: 0 });
-
   res.json({
     status: httpStatus.SUCCESS,
-    data: { projects },
+    data: { project },
   });
 });
 

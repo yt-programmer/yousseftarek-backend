@@ -1,23 +1,20 @@
 const express = require("express");
 const router = express.Router();
-
-const {
-  getProjects,
-  createProject,
-  editProject,
-  deleteProject,
-} = require("../controllers/projects.controller");
-
 const verifyToken = require("../middlewares/verifyToken");
+const {
+  getTestimonials,
+  createTestimonial,
+  deleteTestimonial,
+  editTestimonial,
+} = require("../controllers/testimonials.controller");
+const { body, query, param } = require("express-validator");
 
-const { body, param, query } = require("express-validator");
 const validationResultMiddleware = require("../middlewares/validationResultMiddleware");
 
 router
   .route("/")
   .get(
     [
-      query("filter").optional().isString(),
       query("page")
         .optional()
         .isInt({ min: 1 })
@@ -28,55 +25,60 @@ router
         .withMessage("Limit must be between 1 and 100"),
     ],
     validationResultMiddleware,
-    getProjects,
+    getTestimonials,
   )
   .post(
     verifyToken,
     [
-      body("title").not().isEmpty().withMessage("Title is required"),
+      body("name").not().isEmpty().withMessage("Name is required"),
+      body("position").not().isEmpty().withMessage("Position is required"),
+      body("rating")
+        .not()
+        .isEmpty()
+        .isNumeric()
+        .withMessage("Rating must be a number"),
       body("description")
         .not()
         .isEmpty()
         .withMessage("Description is required"),
-      body("image").not().isEmpty().withMessage("Image is required"),
-      body("link").not().isEmpty().withMessage("Link is required"),
-      body("skils").not().isEmpty().withMessage("Skils is required"),
-      body("filter").not().isEmpty().withMessage("Filter is required"),
     ],
     validationResultMiddleware,
-    createProject,
+
+    createTestimonial,
   );
 
 router
   .route("/:id")
   .patch(
     verifyToken,
-
     [
-      body("title").not().isEmpty().withMessage("Title is required").optional(),
+      body("name").not().isEmpty().withMessage("Name is required").optional(),
+      body("position")
+        .not()
+        .isEmpty()
+        .withMessage("Position is required")
+        .optional(),
+      body("rating")
+        .not()
+        .isEmpty()
+        .isNumeric()
+        .withMessage("Rating must be a number")
+        .optional(),
       body("description")
         .not()
         .isEmpty()
         .withMessage("Description is required")
         .optional(),
-      body("image").not().isEmpty().withMessage("Image is required").optional(),
-      body("link").not().isEmpty().withMessage("Link is required").optional(),
-      body("skils").not().isEmpty().withMessage("Skils is required").optional(),
-      body("filter")
-        .not()
-        .isEmpty()
-        .withMessage("Filter is required")
-        .optional(),
       param("id").isMongoId().withMessage("Invalid ID format"),
     ],
     validationResultMiddleware,
-    editProject,
+    editTestimonial,
   )
   .delete(
     verifyToken,
     [param("id").isMongoId().withMessage("Invalid ID format")],
     validationResultMiddleware,
-    deleteProject,
+    deleteTestimonial,
   );
 
 module.exports = router;

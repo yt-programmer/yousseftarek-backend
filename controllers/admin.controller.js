@@ -8,16 +8,6 @@ const httpStatus = require("../utils/httpStatus");
 const login = asyncWrapper(async (req, res, next) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    return next(
-      appError.create(
-        "Please provide email and password",
-        400,
-        httpStatus.FAIL,
-      ),
-    );
-  }
-
   const admin = await Admin.findOne({ email }).select("+password");
 
   if (!admin) {
